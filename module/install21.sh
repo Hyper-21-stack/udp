@@ -1,4 +1,4 @@
- #!/bin/bash
+#!/bin/bash
 is_number() {
     [[ $1 =~ ^[0-9]+$ ]]
 }
@@ -12,23 +12,22 @@ cd /root
 clear
 echo -e "$YELLOW
 💚 HTTP CUSTOM UDP INSTALLER 💚      
- ╰┈➤ 💚 Resleeved Net 💚               "
+ ╰┈➤ 💚 HyrexNet 💚               "
 echo -e "$NC
 Select an option"
 echo "1. Install HTTP CUSTOM UDP"
 echo "0. Exit"
-# Select an Option 
 
-    read -p "$(echo -e "\033[1;33mSelect a number from 0 to 1: \033[0m")" input
+read -p "$(echo -e "\033[1;33mSelect a number from 0 to 1: \033[0m")" input
 
-    # Check if input is a number
-    if [[ $input =~ ^[0-9]+$ ]]; then
-        selected_option=$input
-    else
-        echo -e "$YELLOW"
-        echo "Invalid input. Please enter a valid number."
-        echo -e "$NC"
-    fi
+if [[ $input =~ ^[0-9]+$ ]]; then
+    selected_option=$input
+else
+    echo -e "$YELLOW"
+    echo "Invalid input. Please enter a valid number."
+    echo -e "$NC"
+    exit 1
+fi
 clear
 case $selected_option in
     1)
@@ -36,42 +35,42 @@ case $selected_option in
         echo "     💚 HTTP CUSTOM UDP AUTO INSTALLATION 💚      "
         echo "        ╰┈➤💚 Installing Binaries 💚           "
         echo -e "$NC"
-        apt install -y curl
-        apt install -y dos2unix
-        apt install -y neofetch
-        source <(curl -sSL 'https://raw.githubusercontent.com/MurRtriX/riX/main/ns/module/module')
-time_reboot() {
-  print_center -ama "${a92:-System/Server Reboot In} $1 ${a93:-Seconds}"
-  REBOOT_TIMEOUT="$1"
+        apt install -y curl dos2unix neofetch
 
-  while [ $REBOOT_TIMEOUT -gt 0 ]; do
-    print_center -ne "-$REBOOT_TIMEOUT-\r"
-    sleep 1
-    : $((REBOOT_TIMEOUT--))
-  done
-  reboot
-}
-        #Get Files
-        source <(curl -sSL 'https://raw.githubusercontent.com/MurRtriX/riX/main/ns/module/module')
-        systemctl stop custom-server.service
-        systemctl disable custom-server.service
+        # Updated Source Path
+        source <(curl -sSL 'https://raw.githubusercontent.com/Hyper-21-stack/udp/main/module/install21.sh')
+
+        time_reboot() {
+          print_center -ama "${a92:-System/Server Reboot In} $1 ${a93:-Seconds}"
+          REBOOT_TIMEOUT="$1"
+          while [ $REBOOT_TIMEOUT -gt 0 ]; do
+            print_center -ne "-$REBOOT_TIMEOUT-\r"
+            sleep 1
+            : $((REBOOT_TIMEOUT--))
+          done
+          reboot
+        }
+
+        systemctl stop custom-server.service 2>/dev/null
+        systemctl disable custom-server.service 2>/dev/null
         rm -rf /etc/systemd/system/custom-server.service
         rm -rf /root/udp
-        rm -rf .config
-        rm -rf snap
-        rm -rf .cache
-        rm -rf .ssh
+        rm -rf .config snap .cache .ssh
+
         mkdir udp
         cd udp
-        wget https://github.com/MurRtriX/riX/releases/download/V1/custom-linux-amd64
+        wget https://github.com/Hyper-21-stack/udp/releases/download/V1/custom-linux-amd64
         chmod 755 custom-linux-amd64
-        wget -O /root/udp/module 'https://raw.githubusercontent.com/MurRtriX/riX/main/ns/module/module'
+
+        wget -O /root/udp/module 'https://raw.githubusercontent.com/Hyper-21-stack/udp/main/module/module'
         chmod 755 /root/udp/module
-        wget -O /root/udp/limiter.sh 'https://raw.githubusercontent.com/MurRtriX/riX/main/ns/module/limiter.sh'
+
+        wget -O /root/udp/limiter.sh 'https://raw.githubusercontent.com/Hyper-21-stack/udp/main/module/limiter.sh'
         chmod 755 /root/udp/limiter.sh
+
         cd /root
         rm -rf /usr/bin/udp
-        wget -O /usr/bin/udp 'https://raw.githubusercontent.com/MurRtriX/riX/main/ns/module/udp'
+        wget -O /usr/bin/udp 'https://raw.githubusercontent.com/Hyper-21-stack/udp/main/module/udp'
         chmod 755 /usr/bin/udp
 
         rm -rf /root/udp/config.json
@@ -85,12 +84,11 @@ time_reboot() {
   }
 }
 EOF
-        # [+config+]
         chmod 755 /root/udp/config.json
 
         cat <<EOF >/etc/systemd/system/custom-server.service
 [Unit]
-Description=UDP Custom by InFiNitY
+Description=UDP Custom by HyrexNet
 
 [Service]
 User=root
@@ -104,23 +102,22 @@ StandardOutput=file:/root/udp/custom.log
 [Install]
 WantedBy=default.target
 EOF
-        #Start Services
+
         systemctl enable custom-server.service
         systemctl start custom-server.service
 
-        #Install Badvpn
         cd /root
-        systemctl stop udpgw.service
-        systemctl disable udpgw.service
+        systemctl stop udpgw.service 2>/dev/null
+        systemctl disable udpgw.service 2>/dev/null
         rm -rf /etc/systemd/system/udpgw.service
         rm -rf /usr/bin/udpgw
         cd /usr/bin
-        wget http://github.com/MurRtriX/riX/releases/download/V1/udpgw
+        wget https://github.com/Hyper-21-stack/udp/releases/download/V1/udpgw
         chmod 755 udpgw
 
         cat <<EOF >/etc/systemd/system/udpgw.service
 [Unit]
-Description=UDPGW Gateway Service by InFiNitY 
+Description=UDPGW Gateway Service by HyrexNet
 After=network.target
 
 [Service]
@@ -132,7 +129,7 @@ User=root
 [Install]
 WantedBy=multi-user.target
 EOF
-        #start badvpn
+
         systemctl enable udpgw.service
         systemctl start udpgw.service
         echo -e "$YELLOW"
@@ -140,13 +137,14 @@ EOF
         echo "     ╰┈➤💚 Badvpn Activated 💚         "
         echo " ╰┈➤ 💚 HTTP CUSTOM UDP SUCCESSFULLY INSTALLED 💚       "
         echo -e "$NC"
-        X
-        exit 1
+        exit 0
         ;;
     *)
         echo -e "$YELLOW"
-        echo "Welcome To Resleeved Net"
+        echo "Welcome To HyrexNet"
         echo -e "$NC"
         exit 1
         ;;
 esac
+
+ 
