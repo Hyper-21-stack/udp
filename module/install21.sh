@@ -1,94 +1,108 @@
 #!/bin/bash
+
+# Colors
+YELLOW='\033[1;33m'
+NC='\033[0m'
+
+# Function to check if input is a number
 is_number() {
     [[ $1 =~ ^[0-9]+$ ]]
 }
-YELLOW='\033[1;33m'
-NC='\033[0m'
+
+# Root Check
 if [ "$(whoami)" != "root" ]; then
     echo "Error: This script must be run as root."
     exit 1
 fi
+
 cd /root
 clear
+
+# Menu
 echo -e "$YELLOW
 💚 HTTP CUSTOM UDP INSTALLER 💚      
- ╰┈➤ 💚 HyrexNet 💚               "
-echo -e "$NC
-Select an option"
+ ╰┈➤ 💚 Resleeved Net 💚               
+$NC
+Select an option:"
 echo "1. Install HTTP CUSTOM UDP"
 echo "0. Exit"
 
 read -p "$(echo -e "\033[1;33mSelect a number from 0 to 1: \033[0m")" input
 
-if [[ $input =~ ^[0-9]+$ ]]; then
-    selected_option=$input
-else
-    echo -e "$YELLOW"
-    echo "Invalid input. Please enter a valid number."
-    echo -e "$NC"
+if ! is_number "$input"; then
+    echo -e "$YELLOW Invalid input. Please enter a number. $NC"
     exit 1
 fi
+
+selected_option=$input
 clear
+
 case $selected_option in
-    1)
-        echo -e "$YELLOW"
-        echo "     💚 HTTP CUSTOM UDP AUTO INSTALLATION 💚      "
-        echo "        ╰┈➤💚 Installing Binaries 💚           "
-        echo -e "$NC"
-        apt install -y curl dos2unix neofetch
+1)
+    echo -e "$YELLOW"
+    echo "     💚 HTTP CUSTOM UDP AUTO INSTALLATION 💚      "
+    echo "        ╰┈➤💚 Installing Packages 💚           "
+    echo -e "$NC"
 
-        # Updated Source Path
-        source <(curl -sSL 'https://raw.githubusercontent.com/Hyper-21-stack/udp/main/module/install21.sh')
+    # Install dependencies
+    apt update -y
+    apt install -y curl wget dos2unix neofetch screen
 
-        time_reboot() {
-          print_center -ama "${a92:-System/Server Reboot In} $1 ${a93:-Seconds}"
-          REBOOT_TIMEOUT="$1"
-          while [ $REBOOT_TIMEOUT -gt 0 ]; do
-            print_center -ne "-$REBOOT_TIMEOUT-\r"
-            sleep 1
-            : $((REBOOT_TIMEOUT--))
-          done
-          reboot
-        }
+    # Stop previous services
+    systemctl stop custom-server.service 2>/dev/null
+    systemctl disable custom-server.service 2>/dev/null
+    rm -rf /etc/systemd/system/custom-server.service
+    systemctl stop udpgw.service 2>/dev/null
+    systemctl disable udpgw.service 2>/dev/null
+    rm -rf /etc/systemd/system/udpgw.service
 
-        systemctl stop custom-server.service 2>/dev/null
-        systemctl disable custom-server.service 2>/dev/null
-        rm -rf /etc/systemd/system/custom-server.service
-        rm -rf /root/udp
-        rm -rf .config snap .cache .ssh
+    # Clean old files
+    rm -rf /root/udp /usr/bin/udp /usr/bin/udpgw
+    rm -rf /root/.config /root/.cache /root/.ssh /root/snap
 
-        mkdir udp
-        cd udp
-        wget https://github.com/Hyper-21-stack/udp/releases/download/V1/custom-linux-amd64
-        chmod 755 custom-linux-amd64
+    # Create udp folder
+    mkdir -p /root/udp
+    cd /root/udp
 
-        wget -O /root/udp/module 'https://raw.githubusercontent.com/Hyper-21-stack/udp/main/module/module'
-        chmod 755 /root/udp/module
+    echo -e "$YELLOW Downloading server files...$NC"
 
-        wget -O /root/udp/limiter.sh 'https://raw.githubusercontent.com/Hyper-21-stack/udp/main/module/limiter.sh'
-        chmod 755 /root/udp/limiter.sh
+    # Download files from YOUR GitHub
+    wget -O custom-linux-amd64 https://github.com/Hyper-21-stack/udp/releases/download/V1/custom-linux-amd64
+    chmod 755 custom-linux-amd64
 
-        cd /root
-        rm -rf /usr/bin/udp
-        wget -O /usr/bin/udp 'https://raw.githubusercontent.com/Hyper-21-stack/udp/main/module/udp'
-        chmod 755 /usr/bin/udp
+    wget -O module.sh https://raw.githubusercontent.com/Hyper-21-stack/udp/main/module/module.sh
+    chmod +x module.sh
 
-        rm -rf /root/udp/config.json
-        cat <<EOF >/root/udp/config.json
+    wget -O limiter.sh https://raw.githubusercontent.com/Hyper-21-stack/udp/main/module/limiter.sh
+    chmod +x limiter.sh
+
+    wget -O udp.sh https://raw.githubusercontent.com/Hyper-21-stack/udp/main/module/udp.sh
+    chmod +x udp.sh
+
+    # Install 'udp' command
+    wget -O /usr/bin/udp https://raw.githubusercontent.com/Hyper-21-stack/udp/main/module/udp.sh
+    chmod +x /usr/bin/udp
+
+    # Create config file
+    echo -e "$YELLOW Setting up config.json...$NC"
+    cat <<EOF >/root/udp/config.json
 {
-"listen": ":443",
-"stream_buffer": 16777216,
-"receive_buffer": 83886080,
-"auth": {
-"mode": "passwords"
-  }
+    "listen": ":443",
+    "stream_buffer": 16777216,
+    "receive_buffer": 83886080,
+    "auth": {
+        "mode": "passwords"
+    }
 }
 EOF
-        chmod 755 /root/udp/config.json
 
-        cat <<EOF >/etc/systemd/system/custom-server.service
+    chmod 755 /root/udp/config.json
+
+    # Create custom-server.service
+    echo -e "$YELLOW Setting up systemd service for custom-server...$NC"
+    cat <<EOF >/etc/systemd/system/custom-server.service
 [Unit]
-Description=UDP Custom by HyrexNet
+Description=UDP Custom by Resleeved Net
 
 [Service]
 User=root
@@ -103,26 +117,25 @@ StandardOutput=file:/root/udp/custom.log
 WantedBy=default.target
 EOF
 
-        systemctl enable custom-server.service
-        systemctl start custom-server.service
+    # Start and enable custom-server
+    systemctl daemon-reload
+    systemctl enable custom-server.service
+    systemctl start custom-server.service
 
-        cd /root
-        systemctl stop udpgw.service 2>/dev/null
-        systemctl disable udpgw.service 2>/dev/null
-        rm -rf /etc/systemd/system/udpgw.service
-        rm -rf /usr/bin/udpgw
-        cd /usr/bin
-        wget https://github.com/Hyper-21-stack/udp/releases/download/V1/udpgw
-        chmod 755 udpgw
+    # Install BadVPN (udpgw)
+    echo -e "$YELLOW Installing BadVPN (udpgw)...$NC"
+    wget -O /usr/bin/udpgw https://github.com/Hyper-21-stack/udp/releases/download/V1/udpgw
+    chmod +x /usr/bin/udpgw
 
-        cat <<EOF >/etc/systemd/system/udpgw.service
+    # Create udpgw service
+    cat <<EOF >/etc/systemd/system/udpgw.service
 [Unit]
-Description=UDPGW Gateway Service by HyrexNet
+Description=UDPGW Gateway Service by Resleeved Net
 After=network.target
 
 [Service]
 Type=forking
-ExecStart=/usr/bin/screen -dmS udpgw /bin/udpgw --listen-addr 127.0.0.1:7300 --max-clients 1000 --max-connections-for-client 1000
+ExecStart=/usr/bin/screen -dmS udpgw /usr/bin/udpgw --listen-addr 127.0.0.1:7300 --max-clients 1000 --max-connections-for-client 1000
 Restart=always
 User=root
 
@@ -130,21 +143,20 @@ User=root
 WantedBy=multi-user.target
 EOF
 
-        systemctl enable udpgw.service
-        systemctl start udpgw.service
-        echo -e "$YELLOW"
-        echo "     💚 P2P SERVICE INITIALIZED 💚     "
-        echo "     ╰┈➤💚 Badvpn Activated 💚         "
-        echo " ╰┈➤ 💚 HTTP CUSTOM UDP SUCCESSFULLY INSTALLED 💚       "
-        echo -e "$NC"
-        exit 0
-        ;;
-    *)
-        echo -e "$YELLOW"
-        echo "Welcome To HyrexNet"
-        echo -e "$NC"
-        exit 1
-        ;;
-esac
+    # Start and enable udpgw
+    systemctl daemon-reload
+    systemctl enable udpgw.service
+    systemctl start udpgw.service
 
- 
+    echo -e "$YELLOW"
+    echo "     💚 P2P SERVICE INITIALIZED 💚     "
+    echo "     ╰┈➤💚 Badvpn Activated 💚         "
+    echo " ╰┈➤ 💚 HTTP CUSTOM UDP SUCCESSFULLY INSTALLED 💚       "
+    echo -e "$NC"
+    ;;
+
+*)
+    echo -e "$YELLOW Welcome To Resleeved Net! $NC"
+    exit 1
+    ;;
+esac
